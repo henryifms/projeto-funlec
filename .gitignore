@@ -1,0 +1,9 @@
+# logs
+cliente_log.txt
+*.log
+
+# scripts gerados automaticamente
+iniciar_servidor.bat
+iniciar_cliente.bat
+iniciar_cliente*.vbs
+server_ip_config.txt
