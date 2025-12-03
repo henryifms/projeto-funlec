@@ -8,7 +8,6 @@ PORT = 5000
 clientes = []
 lock_clientes = threading.Lock()
 
-# Intervalo de reconexão em segundos (se o socket falhar)
 RECONECTAR_DELAY = 5
 
 def tratar_cliente(conn, addr):
@@ -71,15 +70,21 @@ def enviar_para_todos(mensagem: str):
 def main():
     thread_accept = threading.Thread(target=aceitar_conexoes, daemon=True)
     thread_accept.start()
-    
+
     print("[SERVIDOR] Simulando Arduino.")
-    print("[SERVIDOR] Quando voce apertar ENTER, vou mandar LOCK para todos os clientes.")
-    
+    print("[SERVIDOR] ESPACO = desligar PCs, ENTER = LOCK, CTRL+C = sair.")
+
     try:
         while True:
-            _ = input()  # como se fosse o botão
-            print("[SERVIDOR] BOTAO_SOLTO_EXECUTAR (simulado)")
-            enviar_para_todos("LOCK")
+            tecla = input()  # aqui continua sendo ENTER, vamos usar só ENTER por simplicidade
+            if tecla.strip() == "":
+                # ENTER: ainda manda LOCK se quiser manter a função antiga
+                print("[SERVIDOR] BOTAO_SOLTO_EXECUTAR (simulado) -> LOCK")
+                enviar_para_todos("LOCK")
+            elif tecla.strip().upper() == "S":
+                # Se digitar S e ENTER, manda SHUTDOWN
+                print("[SERVIDOR] Enviando SHUTDOWN para todos os clientes...")
+                enviar_para_todos("SHUTDOWN")
     except KeyboardInterrupt:
         print("\n[SERVIDOR] Encerrando por CTRL+C...")
 

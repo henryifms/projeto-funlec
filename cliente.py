@@ -5,6 +5,7 @@ import ctypes
 from ctypes import wintypes
 import os
 from datetime import datetime
+import subprocess
 
 # Configurações do servidor
 SERVER_IP = "10.8.33.158"  # IP do servidor
@@ -14,11 +15,9 @@ PORT = 5000                # Porta do servidor
 LOG_FILE = os.path.join(os.path.dirname(__file__), "cliente_log.txt")
 
 def log(mensagem):
-    """Escreve mensagem no arquivo de log"""
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {mensagem}\n")
 
-# Funções para bloquear/desbloquear teclado e mouse
 BlockInput = ctypes.windll.user32.BlockInput
 BlockInput.argtypes = [wintypes.BOOL]
 BlockInput.restype = wintypes.BOOL
@@ -63,6 +62,8 @@ def ouvir_servidor(sock: socket.socket):
             
             if msg.upper() == "LOCK":
                 threading.Thread(target=travar_por_10_segundos, daemon=True).start()
+            elif msg.upper() == "SHUTDOWN":
+                threading.Thread(target=desligar_pc, daemon=True).start()
     except Exception as e:
         log(f"ERRO ao receber dados: {e}")
         print(f"[CLIENTE] Erro ao receber dados: {e}")
@@ -70,7 +71,6 @@ def ouvir_servidor(sock: socket.socket):
         sock.close()
 
 def conectar_ao_servidor():
-    """Tenta conectar ao servidor, retornando o socket conectado ou None"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.connect((SERVER_IP, PORT))
@@ -82,12 +82,22 @@ def conectar_ao_servidor():
         print(f"[CLIENTE] Erro ao conectar: {e}")
         sock.close()
         return None
+    
+def desligar_pc():
+    log("Comando SHUTDOWN recebido. Desligando o computador...")
+    print("[CLIENTE] Desligando o computador em 5 segundos...")
+    try:
+        # /s = shutdown, /t 5 = 5 segundos, /f = força fechamento de apps
+        subprocess.run(["shutdown", "/s", "/t", "5", "/f"], check=False)
+    except Exception as e:
+        log(f"ERRO ao tentar desligar o PC: {e}")
+        print(f"[CLIENTE] ERRO ao tentar desligar: {e}")
+
 
 def main():
     while True:
         sock = conectar_ao_servidor()
         if sock:
-            # Se conseguiu conectar, inicia a thread de escuta
             t = threading.Thread(target=ouvir_servidor, args=(sock,), daemon=True)
             t.start()
 
@@ -98,7 +108,6 @@ def main():
                     if not texto:
                         continue
                     sock.sendall(texto.encode())
-                # Se o input terminar (CTRL+C), sai do loop
             except KeyboardInterrupt:
                 log("Cliente finalizado pelo usuário.")
                 print("\n[CLIENTE] Saindo...")
@@ -107,11 +116,9 @@ def main():
             except Exception as e:
                 log(f"Erro na comunicação: {e}")
                 sock.close()
-                # Tenta reconectar após um tempo
                 print("[CLIENTE] Reconectando em 5 segundos...")
                 time.sleep(5)
         else:
-            # Se não conseguiu conectar, espera antes de tentar novamente
             print("[CLIENTE] Tentando reconectar em 5 segundos...")
             time.sleep(5)
 
