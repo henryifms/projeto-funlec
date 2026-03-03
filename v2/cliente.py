@@ -2,7 +2,7 @@ import socket
 import ctypes
 import jwt
 
-SECRET = "minha_chave_super_secreta"
+SECRET = "minha_secreta"
 UDP_PORT = 9999
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
