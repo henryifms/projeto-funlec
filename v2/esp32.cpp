@@ -6,15 +6,17 @@ const char* password = "SENHA";
 
 WiFiUDP Udp;
 
-const int buttonPin = 2;
+const int buttonLock = 2;
+const int buttonShutdown = 4;
 
 IPAddress broadcastIP(192,168,1,255);
 unsigned int localPort = 8888;
 unsigned int targetPort = 9999;
 
 void setup() {
-  pinMode(buttonPin, INPUT_PULLUP);
-  
+  pinMode(buttonLock, INPUT_PULLUP);
+  pinMode(buttonShutdown, INPUT_PULLUP);
+
   Serial.begin(115200);
 
   WiFi.begin(ssid, password);
@@ -23,18 +25,25 @@ void setup() {
     Serial.print(".");
   }
 
-  Serial.println("\nWiFi conectadp!");
+  Serial.println("\nWiFi conectado!");
   Serial.println(WiFi.localIP());
 
   Udp.begin(localPort);
 }
 
 void loop() {
-  if (digitalRead(buttonPin) == LOW) {
+
+  if (digitalRead(buttonLock) == LOW) {
     Udp.beginPacket(broadcastIP, targetPort);
-    Udp.print("LOCK_NOW");
+    Udp.print("LOCK");
     Udp.endPacket();
-    
+    delay(1000);
+  }
+
+  if (digitalRead(buttonShutdown) == LOW) {
+    Udp.beginPacket(broadcastIP, targetPort);
+    Udp.print("SHUTDOWN");
+    Udp.endPacket();
     delay(1000);
   }
 }
